@@ -1,13 +1,14 @@
-package com.sriniketh
+package com.sriniketh.mcp
 
+import com.sriniketh.utils.cleanHtmlContent
 import com.sriniketh.client.MediaWikiClient
 import com.sriniketh.model.GetPageContentInput
 import com.sriniketh.model.GetPageContentOutput
 import com.sriniketh.model.SearchWikiInput
 import com.sriniketh.model.SearchWikiOutput
-import com.sriniketh.tools.GetPageContentTool
-import com.sriniketh.tools.MediaWikiTool
-import com.sriniketh.tools.SearchTool
+import com.sriniketh.mcp.tools.GetPageContentTool
+import com.sriniketh.mcp.tools.MediaWikiTool
+import com.sriniketh.mcp.tools.SearchTool
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.utils.io.streams.asInput
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
@@ -51,7 +52,7 @@ class MediaWikiMCPServer(
         logger.info { "Starting MediaWiki MCP Server..." }
 
         server.addTool(searchTool.createTool()) { request ->
-            val input = Json.decodeFromJsonElement<SearchWikiInput>(request.arguments)
+            val input = Json.Default.decodeFromJsonElement<SearchWikiInput>(request.arguments)
             logger.info { "Received search tool request for query: '${input.query}' with limit: ${input.limit}" }
 
             wikiClient.handleSearch(input.query, input.limit).fold(
@@ -63,22 +64,22 @@ class MediaWikiMCPServer(
                             totalResults = results.size,
                             query = input.query
                         )
-                        put("search_results", Json.encodeToJsonElement(result))
+                        put("search_results", Json.Default.encodeToJsonElement(result))
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to process search request for query '${input.query}': ${error.message}" }
                     val response = buildJsonObject {
                         put("error", "Error occurred while searching the wiki: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
                 }
             )
         }
 
         server.addTool(getPageContentTool.createTool()) { request ->
-            val input = Json.decodeFromJsonElement<GetPageContentInput>(request.arguments)
+            val input = Json.Default.decodeFromJsonElement<GetPageContentInput>(request.arguments)
             logger.info { "Received get_page_content tool request for page title: '${input.title}'" }
 
             wikiClient.handleGetPageContent(input.title).fold(
@@ -93,16 +94,16 @@ class MediaWikiMCPServer(
                         wordCount = cleanContent.split("\\s+".toRegex()).size
                     )
                     val response = buildJsonObject {
-                        put("page_content", Json.encodeToJsonElement(result))
+                        put("page_content", Json.Default.encodeToJsonElement(result))
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to fetch content for page title '${input.title}': ${error.message}" }
                     val response = buildJsonObject {
                         put("error", "Error occurred while fetching page content: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
                 }
             )
         }

@@ -1,5 +1,6 @@
 package com.sriniketh
 
+import com.sriniketh.mcp.MediaWikiMCPServer
 import kotlinx.coroutines.awaitCancellation
 
 suspend fun main() {

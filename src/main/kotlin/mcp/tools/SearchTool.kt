@@ -1,4 +1,4 @@
-package com.sriniketh.tools
+package com.sriniketh.mcp.tools
 
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.add

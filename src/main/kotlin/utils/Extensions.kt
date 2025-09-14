@@ -1,4 +1,4 @@
-package com.sriniketh
+package com.sriniketh.utils
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jsoup.Jsoup
