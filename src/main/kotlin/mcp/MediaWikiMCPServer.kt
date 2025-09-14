@@ -9,7 +9,12 @@ import com.sriniketh.model.SearchWikiOutput
 import com.sriniketh.mcp.tools.GetPageContentTool
 import com.sriniketh.mcp.tools.MediaWikiTool
 import com.sriniketh.mcp.tools.SearchTool
+import com.sriniketh.utils.BuildConfigProvider
+import com.sriniketh.utils.BuildConfigProviderImpl
+import com.sriniketh.utils.EnvConfigProvider
+import com.sriniketh.utils.EnvConfigProviderImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.Url
 import io.ktor.utils.io.streams.asInput
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Implementation
@@ -29,7 +34,9 @@ import kotlinx.serialization.json.put
 class MediaWikiMCPServer(
     private val wikiClient: MediaWikiClient = MediaWikiClient(),
     private val searchTool: MediaWikiTool = SearchTool(),
-    private val getPageContentTool: MediaWikiTool = GetPageContentTool()
+    private val getPageContentTool: MediaWikiTool = GetPageContentTool(),
+    private val envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl(),
+    buildConfigProvider: BuildConfigProvider = BuildConfigProviderImpl()
 ) {
 
     companion object {
@@ -38,8 +45,8 @@ class MediaWikiMCPServer(
 
     private val server = Server(
         Implementation(
-            name = "Stardew Valley Wiki MCP Server",
-            version = "0.1.0"
+            name = "${envConfigProvider.wikiName()} MCP Server",
+            version = buildConfigProvider.appVersion()
         ),
         ServerOptions(
             capabilities = ServerCapabilities(
@@ -52,7 +59,7 @@ class MediaWikiMCPServer(
         logger.info { "Starting MediaWiki MCP Server..." }
 
         server.addTool(searchTool.createTool()) { request ->
-            val input = Json.Default.decodeFromJsonElement<SearchWikiInput>(request.arguments)
+            val input = Json.decodeFromJsonElement<SearchWikiInput>(request.arguments)
             logger.info { "Received search tool request for query: '${input.query}' with limit: ${input.limit}" }
 
             wikiClient.handleSearch(input.query, input.limit).fold(
@@ -64,7 +71,7 @@ class MediaWikiMCPServer(
                             totalResults = results.size,
                             query = input.query
                         )
-                        put("search_results", Json.Default.encodeToJsonElement(result))
+                        put("search_results", Json.encodeToJsonElement(result))
                     }
                     CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
                 },
@@ -73,13 +80,13 @@ class MediaWikiMCPServer(
                     val response = buildJsonObject {
                         put("error", "Error occurred while searching the wiki: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
                 }
             )
         }
 
         server.addTool(getPageContentTool.createTool()) { request ->
-            val input = Json.Default.decodeFromJsonElement<GetPageContentInput>(request.arguments)
+            val input = Json.decodeFromJsonElement<GetPageContentInput>(request.arguments)
             logger.info { "Received get_page_content tool request for page title: '${input.title}'" }
 
             wikiClient.handleGetPageContent(input.title).fold(
@@ -87,23 +94,24 @@ class MediaWikiMCPServer(
                     logger.info { "Successfully fetched content for page title: '${input.title}'" }
                     val htmlContent = pageContent.text["*"].orEmpty()
                     val cleanContent = htmlContent.cleanHtmlContent()
+                    val apiUrl = Url(envConfigProvider.apiUrl())
                     val result = GetPageContentOutput(
                         title = pageContent.title,
                         content = cleanContent,
-                        url = "https://stardewvalleywiki.com/${pageContent.title.replace(" ", "_")}",
+                        url = "${apiUrl.protocol}://${apiUrl.host}/${pageContent.title.replace(" ", "_")}",
                         wordCount = cleanContent.split("\\s+".toRegex()).size
                     )
                     val response = buildJsonObject {
-                        put("page_content", Json.Default.encodeToJsonElement(result))
+                        put("page_content", Json.encodeToJsonElement(result))
                     }
-                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to fetch content for page title '${input.title}': ${error.message}" }
                     val response = buildJsonObject {
                         put("error", "Error occurred while fetching page content: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
                 }
             )
         }

@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.buildconfig)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.serialization)
@@ -6,6 +7,10 @@ plugins {
 
 group = "com.sriniketh"
 version = "0.1.0"
+
+buildConfig {
+    buildConfigField("String", "APP_VERSION", "\"$version\"")
+}
 
 dependencies {
     implementation(libs.jsoup)

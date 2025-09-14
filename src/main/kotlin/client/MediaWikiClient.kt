@@ -4,6 +4,10 @@ import com.sriniketh.model.GetPageContentParsedResult
 import com.sriniketh.model.PageContent
 import com.sriniketh.model.SearchWikiResult
 import com.sriniketh.model.WikiPage
+import com.sriniketh.utils.BuildConfigProvider
+import com.sriniketh.utils.BuildConfigProviderImpl
+import com.sriniketh.utils.EnvConfigProvider
+import com.sriniketh.utils.EnvConfigProviderImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -19,18 +23,24 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-class MediaWikiClient {
+class MediaWikiClient(
+    envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl(),
+    buildConfigProvider: BuildConfigProvider = BuildConfigProviderImpl()
+) {
+
+    private val wikiName: String = envConfigProvider.wikiName()
+    private val wikiBaseUrl: String = envConfigProvider.apiUrl()
+    private val appVersion: String = buildConfigProvider.appVersion()
 
     companion object {
         private val logger = KotlinLogging.logger {}
-        private const val BASE_URL = "https://stardewvalleywiki.com/mediawiki/api.php"
     }
 
     private val client: HttpClient = HttpClient {
         defaultRequest {
-            url(BASE_URL)
+            url(wikiBaseUrl)
             headers {
-                append("User-Agent", "StardewValleyWikiMCP/0.1.0")
+                append("User-Agent", "$wikiName MCP/$appVersion")
                 append("Accept", "application/json")
             }
             contentType(ContentType.Application.Json)

@@ -1,20 +1,24 @@
 package com.sriniketh.mcp.tools
 
+import com.sriniketh.utils.EnvConfigProvider
+import com.sriniketh.utils.EnvConfigProviderImpl
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class GetPageContentTool : MediaWikiTool {
+class GetPageContentTool(
+    private val envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl()
+) : MediaWikiTool {
 
     override fun createTool(): Tool = Tool(
         name = "get_page_content",
         title = "Get Wiki Page Content",
-        description = "Get the full content of a specific Stardew Valley wiki page",
+        description = "Get the full content of a specific ${envConfigProvider.wikiName()} page",
         inputSchema = Tool.Input(
             properties = buildJsonObject {
                 put("page_title", buildJsonObject {
                     put("type", "string")
-                    put("description", "The exact title of the wiki page to retrieve")
+                    put("description", "The exact title of the ${envConfigProvider.wikiName()} page to retrieve")
                 })
             },
             required = listOf("page_title")
@@ -23,7 +27,7 @@ class GetPageContentTool : MediaWikiTool {
             properties = buildJsonObject {
                 put("title", buildJsonObject {
                     put("type", "string")
-                    put("description", "The title of the wiki page")
+                    put("description", "The title of the ${envConfigProvider.wikiName()} page")
                 })
                 put("content", buildJsonObject {
                     put("type", "string")
@@ -32,7 +36,7 @@ class GetPageContentTool : MediaWikiTool {
                 put("url", buildJsonObject {
                     put("type", "string")
                     put("format", "uri")
-                    put("description", "Direct URL to the wiki page")
+                    put("description", "Direct URL to the ${envConfigProvider.wikiName()} page")
                 })
                 put("word_count", buildJsonObject {
                     put("type", "integer")
