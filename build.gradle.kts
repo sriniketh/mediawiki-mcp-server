@@ -24,6 +24,8 @@ dependencies {
     implementation(libs.mcp.sdk)
 
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlin.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }
 
 tasks.test {

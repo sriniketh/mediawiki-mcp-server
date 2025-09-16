@@ -11,6 +11,8 @@ import com.sriniketh.utils.EnvConfigProviderImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -24,6 +26,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 class MediaWikiClient(
+    engine: HttpClientEngine = CIO.create(),
     envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl(),
     buildConfigProvider: BuildConfigProvider = BuildConfigProviderImpl()
 ) {
@@ -36,7 +39,7 @@ class MediaWikiClient(
         private val logger = KotlinLogging.logger {}
     }
 
-    private val client: HttpClient = HttpClient {
+    private val client: HttpClient = HttpClient(engine) {
         defaultRequest {
             url(wikiBaseUrl)
             headers {
