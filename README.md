@@ -1,3 +1,5 @@
+[![build](https://github.com/sriniketh/mediawiki-mcp-server/actions/workflows/build.yml/badge.svg)](https://github.com/sriniketh/mediawiki-mcp-server/actions/workflows/build.yml)
+
 # MediaWiki MCP Server
 
 A MediaWiki [MCP](https://modelcontextprotocol.io/docs/getting-started/intro) server written in Kotlin. Provides access
