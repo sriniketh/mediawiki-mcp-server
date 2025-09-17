@@ -2,6 +2,7 @@ package com.sriniketh.mcp
 
 import com.sriniketh.utils.cleanHtmlContent
 import com.sriniketh.client.MediaWikiClient
+import com.sriniketh.client.MediaWikiClientImpl
 import com.sriniketh.model.GetPageContentInput
 import com.sriniketh.model.GetPageContentOutput
 import com.sriniketh.model.SearchWikiInput
@@ -23,6 +24,7 @@ import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import io.modelcontextprotocol.kotlin.sdk.shared.Transport
 import kotlinx.io.asSink
 import kotlinx.io.buffered
 import kotlinx.serialization.json.Json
@@ -32,7 +34,8 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
 
 class MediaWikiMCPServer(
-    private val wikiClient: MediaWikiClient = MediaWikiClient(),
+    private val wikiClient: MediaWikiClient = MediaWikiClientImpl(),
+    private val transport: Transport = stdioServerTransport(),
     private val searchTool: MediaWikiTool = SearchTool(),
     private val getPageContentTool: MediaWikiTool = GetPageContentTool(),
     private val envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl(),
@@ -73,7 +76,7 @@ class MediaWikiMCPServer(
                         )
                         put("search_results", Json.encodeToJsonElement(result))
                     }
-                    CallToolResult(content = listOf(TextContent(Json.Default.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to process search request for query '${input.query}': ${error.message}" }
@@ -117,11 +120,12 @@ class MediaWikiMCPServer(
         }
 
         logger.info { "Setting up transport and connecting server..." }
-        val transport = StdioServerTransport(
-            System.`in`.asInput(),
-            System.out.asSink().buffered()
-        )
         server.connect(transport)
         logger.info { "MediaWiki MCP Server connected and ready to handle requests" }
     }
 }
+
+private fun stdioServerTransport(): StdioServerTransport = StdioServerTransport(
+    System.`in`.asInput(),
+    System.out.asSink().buffered()
+)

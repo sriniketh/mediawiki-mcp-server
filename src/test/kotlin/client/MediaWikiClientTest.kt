@@ -1,6 +1,6 @@
 package client
 
-import com.sriniketh.client.MediaWikiClient
+import com.sriniketh.client.MediaWikiClientImpl
 import com.sriniketh.model.GetPageContentParsedResult
 import com.sriniketh.model.PageContent
 import com.sriniketh.model.SearchWikiQuery
@@ -26,7 +26,7 @@ class MediaWikiClientTest {
     private val envConfigProvider: EnvConfigProvider = FakeEnvConfigProvider()
     private val buildConfigProvider: BuildConfigProvider = FakeBuildConfigProvider()
     private val mockEngine = MediaWikiMockEngine()
-    private val client = MediaWikiClient(mockEngine.getMockEngine(), envConfigProvider, buildConfigProvider)
+    private val client = MediaWikiClientImpl(mockEngine.getMockEngine(), envConfigProvider, buildConfigProvider)
 
     @Test
     fun `handleSearch returns list of WikiPage when request is successful`() = runTest {

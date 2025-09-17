@@ -25,11 +25,16 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-class MediaWikiClient(
+interface MediaWikiClient {
+    suspend fun handleSearch(query: String, limit: Int): Result<List<WikiPage>>
+    suspend fun handleGetPageContent(pageTitle: String): Result<PageContent>
+}
+
+class MediaWikiClientImpl(
     engine: HttpClientEngine = CIO.create(),
     envConfigProvider: EnvConfigProvider = EnvConfigProviderImpl(),
     buildConfigProvider: BuildConfigProvider = BuildConfigProviderImpl()
-) {
+) : MediaWikiClient {
 
     private val wikiName: String = envConfigProvider.wikiName()
     private val wikiBaseUrl: String = envConfigProvider.apiUrl()
@@ -61,7 +66,7 @@ class MediaWikiClient(
         }
     }
 
-    suspend fun handleSearch(query: String, limit: Int): Result<List<WikiPage>> {
+    override suspend fun handleSearch(query: String, limit: Int): Result<List<WikiPage>> {
         logger.info { "Starting search for query: '$query' with limit: $limit" }
         return runCatching {
             client.get {
@@ -81,7 +86,7 @@ class MediaWikiClient(
         }
     }
 
-    suspend fun handleGetPageContent(pageTitle: String): Result<PageContent> {
+    override suspend fun handleGetPageContent(pageTitle: String): Result<PageContent> {
         logger.info { "Fetching content for page title: '$pageTitle'" }
         return runCatching {
             client.get {
