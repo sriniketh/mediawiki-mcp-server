@@ -5,7 +5,7 @@ kotlin = "2.2.20"
 ktor = "3.3.0"
 logback = "1.5.18"
 logging = "7.0.13"
-mcp = "0.7.0"
+mcp = "0.7.2"
 coroutines-test = "1.10.2"
 
 [libraries]
