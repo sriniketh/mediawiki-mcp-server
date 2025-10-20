@@ -12,7 +12,7 @@ COPY src/ src/
 RUN gradle build --no-daemon
 
 # Runtime stage
-FROM openjdk:11-jre-slim
+FROM openjdk:11.0.16-jre-slim
 WORKDIR /app
 
 COPY --from=build /app/build/libs/mediawiki_mcp_server-all.jar app.jar
