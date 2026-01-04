@@ -1,6 +1,6 @@
 [versions]
 buildconfig = "5.7.1"
-jsoup = "1.21.2"
+jsoup = "1.22.1"
 kotlin = "2.3.0"
 ktor = "3.3.3"
 logback = "1.5.23"
