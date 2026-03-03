@@ -1,7 +1,8 @@
 package fakes
 
 import com.sriniketh.mcp.tools.MediaWikiTool
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 
 class FakeMediaWikiTool(private val name: String) : MediaWikiTool {
 
@@ -9,7 +10,7 @@ class FakeMediaWikiTool(private val name: String) : MediaWikiTool {
         name = name,
         title = "Fake Tool $name",
         description = "A fake tool for testing",
-        inputSchema = Tool.Input(),
+        inputSchema = ToolSchema(),
         outputSchema = null,
         annotations = null
     )

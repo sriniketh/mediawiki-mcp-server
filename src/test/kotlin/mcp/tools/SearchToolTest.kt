@@ -27,7 +27,7 @@ class SearchToolTest {
     fun `createTool returns tool with correct inputSchema`() {
         val tool = searchTool.createTool()
         val inputSchema = tool.inputSchema
-        val properties = inputSchema.properties
+        val properties = inputSchema.properties!!
         assert(properties["type"]?.jsonPrimitive?.content == "object")
         val props = properties["properties"]!!.jsonObject
 

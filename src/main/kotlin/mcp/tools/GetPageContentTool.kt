@@ -2,7 +2,8 @@ package com.sriniketh.mcp.tools
 
 import com.sriniketh.utils.EnvConfigProvider
 import com.sriniketh.utils.EnvConfigProviderImpl
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -14,7 +15,7 @@ class GetPageContentTool(
         name = "get_page_content",
         title = "Get Wiki Page Content",
         description = "Get the full content of a specific ${envConfigProvider.wikiName()} page",
-        inputSchema = Tool.Input(
+        inputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("page_title", buildJsonObject {
                     put("type", "string")
@@ -23,7 +24,7 @@ class GetPageContentTool(
             },
             required = listOf("page_title")
         ),
-        outputSchema = Tool.Output(
+        outputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("title", buildJsonObject {
                     put("type", "string")

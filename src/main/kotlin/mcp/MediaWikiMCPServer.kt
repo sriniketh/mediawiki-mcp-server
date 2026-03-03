@@ -17,11 +17,11 @@ import com.sriniketh.utils.EnvConfigProviderImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.Url
 import io.ktor.utils.io.streams.asInput
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
-import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.Server
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
@@ -62,7 +62,7 @@ class MediaWikiMCPServer(
         logger.info { "Starting MediaWiki MCP Server..." }
 
         server.addTool(searchTool.createTool()) { request ->
-            val input = Json.decodeFromJsonElement<SearchWikiInput>(request.arguments)
+            val input = Json.decodeFromJsonElement<SearchWikiInput>(request.arguments ?: buildJsonObject {})
             logger.info { "Received search tool request for query: '${input.query}' with limit: ${input.limit}" }
 
             wikiClient.handleSearch(input.query, input.limit).fold(
@@ -89,7 +89,7 @@ class MediaWikiMCPServer(
         }
 
         server.addTool(getPageContentTool.createTool()) { request ->
-            val input = Json.decodeFromJsonElement<GetPageContentInput>(request.arguments)
+            val input = Json.decodeFromJsonElement<GetPageContentInput>(request.arguments ?: buildJsonObject {})
             logger.info { "Received get_page_content tool request for page title: '${input.title}'" }
 
             wikiClient.handleGetPageContent(input.title).fold(
