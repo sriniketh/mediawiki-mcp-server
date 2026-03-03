@@ -1,7 +1,8 @@
 package fakes
 
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCMessage
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
+import io.modelcontextprotocol.kotlin.sdk.shared.TransportSendOptions
+import io.modelcontextprotocol.kotlin.sdk.types.JSONRPCMessage
 
 class FakeTransport : Transport {
 
@@ -27,7 +28,7 @@ class FakeTransport : Transport {
         isStarted = true
     }
 
-    override suspend fun send(message: JSONRPCMessage) {
+    override suspend fun send(message: JSONRPCMessage, requestOptions: TransportSendOptions?) {
         if (isClosed) return
 
         linkedTransport?.let { linked ->

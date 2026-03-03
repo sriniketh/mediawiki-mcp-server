@@ -1,7 +1,7 @@
 package fakes
 
 import com.sriniketh.mcp.tools.MediaWikiTool
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
 
 class FakeMediaWikiTool(private val name: String) : MediaWikiTool {
 

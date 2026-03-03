@@ -2,7 +2,7 @@ package com.sriniketh.mcp.tools
 
 import com.sriniketh.utils.EnvConfigProvider
 import com.sriniketh.utils.EnvConfigProviderImpl
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
