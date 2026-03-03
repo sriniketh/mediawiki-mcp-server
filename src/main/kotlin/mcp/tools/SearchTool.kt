@@ -3,6 +3,7 @@ package com.sriniketh.mcp.tools
 import com.sriniketh.utils.EnvConfigProvider
 import com.sriniketh.utils.EnvConfigProviderImpl
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -16,7 +17,7 @@ class SearchTool(
         name = "search_wiki",
         title = "Search ${envConfigProvider.wikiName()}",
         description = "Search the ${envConfigProvider.wikiName()} for information about the topic",
-        inputSchema = Tool.Input(
+        inputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("type", "object")
                 put("properties", buildJsonObject {
@@ -35,7 +36,7 @@ class SearchTool(
                 })
             }
         ),
-        outputSchema = Tool.Output(
+        outputSchema = ToolSchema(
             properties = buildJsonObject {
                 put("oneOf", buildJsonArray {
                     add(buildJsonObject {

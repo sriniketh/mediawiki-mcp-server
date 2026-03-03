@@ -25,8 +25,9 @@ class GetPageContentToolTest {
     fun `createTool returns tool with correct inputSchema`() {
         val tool = getPageContentTool.createTool()
         val inputSchema = tool.inputSchema
-        assert(inputSchema.properties.containsKey("page_title"))
-        val pageTitleProperty = inputSchema.properties["page_title"]!!
+        val inputProperties = inputSchema.properties!!
+        assert(inputProperties.containsKey("page_title"))
+        val pageTitleProperty = inputProperties["page_title"]!!
         assert(pageTitleProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(pageTitleProperty.jsonObject["description"]?.jsonPrimitive?.content == "The exact title of the TestWiki page to retrieve")
         assert(inputSchema.required?.contains("page_title") == true)
@@ -40,20 +41,21 @@ class GetPageContentToolTest {
         for (property in expectedProperties) {
             assert(outputSchema?.properties?.containsKey(property) == true)
         }
-        val titleProperty = outputSchema?.properties["title"]!!
+        val outputProperties = outputSchema?.properties!!
+        val titleProperty = outputProperties["title"]!!
         assert(titleProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(titleProperty.jsonObject["description"]?.jsonPrimitive?.content == "The title of the TestWiki page")
 
-        val contentProperty = outputSchema.properties["content"]!!
+        val contentProperty = outputProperties["content"]!!
         assert(contentProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(contentProperty.jsonObject["description"]?.jsonPrimitive?.content == "The full text content of the page (HTML stripped)")
 
-        val urlProperty = outputSchema.properties["url"]!!
+        val urlProperty = outputProperties["url"]!!
         assert(urlProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(urlProperty.jsonObject["format"]?.jsonPrimitive?.content == "uri")
         assert(urlProperty.jsonObject["description"]?.jsonPrimitive?.content == "Direct URL to the TestWiki page")
 
-        val wordCountProperty = outputSchema.properties["word_count"]!!
+        val wordCountProperty = outputProperties["word_count"]!!
         assert(wordCountProperty.jsonObject["type"]?.jsonPrimitive?.content == "integer")
         assert(wordCountProperty.jsonObject["description"]?.jsonPrimitive?.content == "Number of words in the content")
 
