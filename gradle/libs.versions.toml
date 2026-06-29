@@ -1,5 +1,5 @@
 [versions]
-buildconfig = "6.0.7"
+buildconfig = "6.0.10"
 jsoup = "1.22.2"
 kotlin = "2.3.10"
 ktor = "3.5.1"
