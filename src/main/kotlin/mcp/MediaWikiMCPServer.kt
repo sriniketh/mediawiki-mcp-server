@@ -16,7 +16,6 @@ import com.sriniketh.utils.EnvConfigProvider
 import com.sriniketh.utils.EnvConfigProviderImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.Url
-import io.ktor.utils.io.streams.asInput
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
@@ -26,6 +25,7 @@ import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
 import kotlinx.io.asSink
+import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -120,12 +120,12 @@ class MediaWikiMCPServer(
         }
 
         logger.info { "Setting up transport and connecting server..." }
-        server.connect(transport)
+        server.createSession(transport)
         logger.info { "MediaWiki MCP Server connected and ready to handle requests" }
     }
 }
 
 private fun stdioServerTransport(): StdioServerTransport = StdioServerTransport(
-    System.`in`.asInput(),
+    System.`in`.asSource().buffered(),
     System.out.asSink().buffered()
 )

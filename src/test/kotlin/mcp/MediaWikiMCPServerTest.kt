@@ -75,9 +75,9 @@ class MediaWikiMCPServerTest {
                 }
             )
 
-            assertEquals(1, result!!.content.size)
+            assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
-            val responseJson = Json.parseToJsonElement(content.text!!).jsonObject
+            val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("search_results"))
 
             val searchResults = Json.decodeFromJsonElement<JsonObject>(responseJson["search_results"]!!)
@@ -110,9 +110,9 @@ class MediaWikiMCPServerTest {
                 }
             )
 
-            assertEquals(1, result!!.content.size)
+            assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
-            val responseJson = Json.parseToJsonElement(content.text!!).jsonObject
+            val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("error"))
 
             val errorMessage = responseJson["error"]!!.jsonPrimitive.content
@@ -140,9 +140,9 @@ class MediaWikiMCPServerTest {
                 }
             )
 
-            assertEquals(1, result!!.content.size)
+            assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
-            val responseJson = Json.parseToJsonElement(content.text!!).jsonObject
+            val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("page_content"))
 
             val pageContent = Json.decodeFromJsonElement<JsonObject>(responseJson["page_content"]!!)
@@ -168,9 +168,9 @@ class MediaWikiMCPServerTest {
                 }
             )
 
-            assertEquals(1, result!!.content.size)
+            assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
-            val responseJson = Json.parseToJsonElement(content.text!!).jsonObject
+            val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("error"))
 
             val errorMessage = responseJson["error"]!!.jsonPrimitive.content
