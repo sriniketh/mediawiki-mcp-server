@@ -28,7 +28,7 @@ class FakeTransport : Transport {
         isStarted = true
     }
 
-    override suspend fun send(message: JSONRPCMessage, requestOptions: TransportSendOptions?) {
+    override suspend fun send(message: JSONRPCMessage, options: TransportSendOptions?) {
         if (isClosed) return
 
         linkedTransport?.let { linked ->
