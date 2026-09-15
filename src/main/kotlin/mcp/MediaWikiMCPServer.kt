@@ -83,7 +83,7 @@ class MediaWikiMCPServer(
                     val response = buildJsonObject {
                         put("error", "Error occurred while searching the wiki: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
                 }
             )
         }
@@ -114,7 +114,7 @@ class MediaWikiMCPServer(
                     val response = buildJsonObject {
                         put("error", "Error occurred while fetching page content: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
                 }
             )
         }
