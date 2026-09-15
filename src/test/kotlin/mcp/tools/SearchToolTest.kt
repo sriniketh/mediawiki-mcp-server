@@ -28,40 +28,32 @@ class SearchToolTest {
         val tool = searchTool.createTool()
         val inputSchema = tool.inputSchema
         val properties = inputSchema.properties!!
-        assert(properties["type"]?.jsonPrimitive?.content == "object")
-        val props = properties["properties"]!!.jsonObject
 
-        assert(props.containsKey("query"))
-        val queryProperty = props["query"]!!
+        assert(properties.keys == setOf("query", "limit"))
+
+        val queryProperty = properties["query"]!!
         assert(queryProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(queryProperty.jsonObject["description"]?.jsonPrimitive?.content == "Search query for the TestWiki")
 
-        assert(props.containsKey("limit"))
-        val limitProperty = props["limit"]!!
+        val limitProperty = properties["limit"]!!
         assert(limitProperty.jsonObject["type"]?.jsonPrimitive?.content == "integer")
         assert(limitProperty.jsonObject["description"]?.jsonPrimitive?.content == "Maximum number of results to return (default: 5)")
         assert(limitProperty.jsonObject["default"]?.jsonPrimitive?.int == 5)
 
-        val required = properties["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(required.contains("query"))
+        assert(inputSchema.required == listOf("query"))
     }
 
     @Test
-    fun `createTool returns tool correct outputSchema with two options`() {
+    fun `createTool returns tool correct outputSchema with results and error fields`() {
         val tool = searchTool.createTool()
         val outputSchema = tool.outputSchema
-        val properties = outputSchema?.properties
-        val oneOfArray = properties?.get("oneOf")?.jsonArray
-        assert(oneOfArray != null && oneOfArray.size == 2)
+        val properties = outputSchema?.properties!!
 
-        val firstOption = oneOfArray!![0].jsonObject
-        assert(firstOption["type"]?.jsonPrimitive?.content == "object")
-        val props = firstOption["properties"]!!.jsonObject
+        assert(properties.keys == setOf("results", "error"))
 
-        assert(props.containsKey("results"))
-        val resultsProperty = props["results"]!!
-        assert(resultsProperty.jsonObject["type"]?.jsonPrimitive?.content == "array")
-        val items = resultsProperty.jsonObject["items"]!!.jsonObject
+        val resultsProperty = properties["results"]!!.jsonObject
+        assert(resultsProperty["type"]?.jsonPrimitive?.content == "array")
+        val items = resultsProperty["items"]!!.jsonObject
         assert(items["type"]?.jsonPrimitive?.content == "object")
         val itemProps = items["properties"]!!.jsonObject
         val expectedItemProperties =
@@ -94,19 +86,11 @@ class SearchToolTest {
             assert(required.contains(property))
         }
 
-        val firstOptionRequired = firstOption["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(firstOptionRequired.contains("results"))
-
-        val secondOption = oneOfArray[1].jsonObject
-        assert(secondOption["type"]?.jsonPrimitive?.content == "object")
-        val secondOptionProps = secondOption["properties"]!!.jsonObject
-
-        assert(secondOptionProps.containsKey("error"))
-        val errorProperty = secondOptionProps["error"]!!
-        assert(errorProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
-        assert(errorProperty.jsonObject["description"]?.jsonPrimitive?.content == "Error message in case of failures while searching TestWiki")
-
-        val secondOptionRequired = secondOption["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(secondOptionRequired.contains("error"))
+        val errorProperty = properties["error"]!!.jsonObject
+        assert(errorProperty["type"]?.jsonPrimitive?.content == "string")
+        assert(
+            errorProperty["description"]?.jsonPrimitive?.content ==
+                "Error message in case of failures while searching TestWiki. Present when the search fails."
+        )
     }
 }

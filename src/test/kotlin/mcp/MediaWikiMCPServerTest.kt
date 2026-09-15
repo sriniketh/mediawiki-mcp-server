@@ -1,6 +1,9 @@
 package mcp
 
 import com.sriniketh.mcp.MediaWikiMCPServer
+import com.sriniketh.mcp.tools.GetPageContentTool
+import com.sriniketh.mcp.tools.MediaWikiTool
+import com.sriniketh.mcp.tools.SearchTool
 import com.sriniketh.model.PageContent
 import com.sriniketh.model.WikiPage
 import fakes.FakeBuildConfigProvider
@@ -46,6 +49,27 @@ class MediaWikiMCPServerTest {
         val toolNames = tools.tools.map { it.name }
         assertTrue(toolNames.contains("search_wiki"))
         assertTrue(toolNames.contains("get_page_content"))
+    }
+
+    @Test
+    fun `tools list round trip returns flat, non-nested input schemas for the real tools`() = runTest {
+        val (server, client, clientTransport) = createClientServerWithLinkedTransport(
+            fakeSearchTool = SearchTool(FakeEnvConfigProvider()),
+            fakeGetPageContentTool = GetPageContentTool(FakeEnvConfigProvider())
+        )
+        server.start()
+        client.connect(clientTransport)
+        val tools = client.listTools(request = ListToolsRequest())
+
+        val searchInputSchema = tools.tools.first { it.name == "search_wiki" }.inputSchema
+        val searchProperties = searchInputSchema.properties!!
+        assertEquals(setOf("query", "limit"), searchProperties.keys)
+        assertEquals(listOf("query"), searchInputSchema.required)
+
+        val getPageContentInputSchema = tools.tools.first { it.name == "get_page_content" }.inputSchema
+        val getPageContentProperties = getPageContentInputSchema.properties!!
+        assertEquals(setOf("page_title"), getPageContentProperties.keys)
+        assertEquals(listOf("page_title"), getPageContentInputSchema.required)
     }
 
     @Test
@@ -180,8 +204,8 @@ class MediaWikiMCPServerTest {
 
     private fun createClientServerWithLinkedTransport(
         fakeMediaWikiClient: FakeMediaWikiClient = FakeMediaWikiClient(),
-        fakeSearchTool: FakeMediaWikiTool = FakeMediaWikiTool("search_wiki"),
-        fakeGetPageContentTool: FakeMediaWikiTool = FakeMediaWikiTool("get_page_content")
+        fakeSearchTool: MediaWikiTool = FakeMediaWikiTool("search_wiki"),
+        fakeGetPageContentTool: MediaWikiTool = FakeMediaWikiTool("get_page_content")
     ): Triple<MediaWikiMCPServer, Client, FakeTransport> {
         val (serverTransport, clientTransport) = FakeTransport.createLinkedPair()
         val server = MediaWikiMCPServer(
