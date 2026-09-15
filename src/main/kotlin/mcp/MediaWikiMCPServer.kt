@@ -128,4 +128,4 @@ class MediaWikiMCPServer(
 private fun stdioServerTransport(): StdioServerTransport = StdioServerTransport(
     System.`in`.asSource().buffered(),
     System.out.asSink().buffered()
-)
+) {}
