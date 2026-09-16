@@ -35,7 +35,7 @@ class SearchTool(
             properties = buildJsonObject {
                 put("results", buildJsonObject {
                     put("type", "array")
-                    put("description", "Search results for the query. Present when the search succeeds.")
+                    put("description", "Search results for the query.")
                     put("items", buildJsonObject {
                         put("type", "object")
                         put("properties", buildJsonObject {
@@ -69,15 +69,8 @@ class SearchTool(
                         })
                     })
                 })
-                put("error", buildJsonObject {
-                    put("type", "string")
-                    put(
-                        "description",
-                        "Error message in case of failures while searching " +
-                            "${envConfigProvider.wikiName()}. Present when the search fails."
-                    )
-                })
-            }
+            },
+            required = listOf("results")
         ),
         annotations = null
     )

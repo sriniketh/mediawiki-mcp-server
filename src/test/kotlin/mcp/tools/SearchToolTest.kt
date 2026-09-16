@@ -44,16 +44,18 @@ class SearchToolTest {
     }
 
     @Test
-    fun `createTool returns tool correct outputSchema with results and error fields`() {
+    fun `createTool returns tool with correct outputSchema`() {
         val tool = searchTool.createTool()
         val outputSchema = tool.outputSchema
+        assert(outputSchema?.type == "object")
+
         val properties = outputSchema?.properties!!
+        assert(!properties.containsKey("oneOf"))
 
-        assert(properties.keys == setOf("results", "error"))
-
-        val resultsProperty = properties["results"]!!.jsonObject
-        assert(resultsProperty["type"]?.jsonPrimitive?.content == "array")
-        val items = resultsProperty["items"]!!.jsonObject
+        assert(properties.containsKey("results"))
+        val resultsProperty = properties["results"]!!
+        assert(resultsProperty.jsonObject["type"]?.jsonPrimitive?.content == "array")
+        val items = resultsProperty.jsonObject["items"]!!.jsonObject
         assert(items["type"]?.jsonPrimitive?.content == "object")
         val itemProps = items["properties"]!!.jsonObject
         val expectedItemProperties =
@@ -86,11 +88,7 @@ class SearchToolTest {
             assert(required.contains(property))
         }
 
-        val errorProperty = properties["error"]!!.jsonObject
-        assert(errorProperty["type"]?.jsonPrimitive?.content == "string")
-        assert(
-            errorProperty["description"]?.jsonPrimitive?.content ==
-                "Error message in case of failures while searching TestWiki. Present when the search fails."
-        )
+        val outputRequired = outputSchema.required!!
+        assert(outputRequired.contains("results"))
     }
 }
