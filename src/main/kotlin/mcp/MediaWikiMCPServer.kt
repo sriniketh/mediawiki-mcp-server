@@ -22,8 +22,10 @@ import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
+import io.modelcontextprotocol.kotlin.sdk.server.ServerSession
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.Transport
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
@@ -47,6 +49,8 @@ class MediaWikiMCPServer(
         private val logger = KotlinLogging.logger {}
     }
 
+    private val sessionClosed = CompletableDeferred<Unit>()
+
     private val server = Server(
         Implementation(
             name = "mediawiki-mcp-server",
@@ -60,7 +64,7 @@ class MediaWikiMCPServer(
         )
     )
 
-    suspend fun start() {
+    suspend fun start(): ServerSession {
         logger.info { "Starting MediaWiki MCP Server..." }
 
         server.addTool(searchTool.createTool()) { request ->
@@ -124,8 +128,17 @@ class MediaWikiMCPServer(
         }
 
         logger.info { "Setting up transport and connecting server..." }
-        server.createSession(transport)
+        val session = server.createSession(transport)
+        session.onClose {
+            logger.info { "Transport closed, session shutting down" }
+            sessionClosed.complete(Unit)
+        }
         logger.info { "MediaWiki MCP Server connected and ready to handle requests" }
+        return session
+    }
+
+    suspend fun awaitShutdown() {
+        sessionClosed.await()
     }
 }
 
