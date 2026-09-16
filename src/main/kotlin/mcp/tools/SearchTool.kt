@@ -62,15 +62,19 @@ class SearchTool(
                         })
                         put("required", buildJsonArray {
                             add("title")
-                            add("snippet")
-                            add("sectiontitle")
-                            add("categorysnippet")
-                            add("wordcount")
                         })
                     })
                 })
+                put("totalResults", buildJsonObject {
+                    put("type", "integer")
+                    put("description", "Total number of results found for the query")
+                })
+                put("query", buildJsonObject {
+                    put("type", "string")
+                    put("description", "The search query that was executed")
+                })
             },
-            required = listOf("results")
+            required = listOf("results", "totalResults", "query")
         ),
         annotations = null
     )
