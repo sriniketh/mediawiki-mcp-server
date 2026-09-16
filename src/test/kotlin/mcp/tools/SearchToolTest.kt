@@ -47,19 +47,16 @@ class SearchToolTest {
     }
 
     @Test
-    fun `createTool returns tool correct outputSchema with two options`() {
+    fun `createTool returns tool with correct outputSchema`() {
         val tool = searchTool.createTool()
         val outputSchema = tool.outputSchema
-        val properties = outputSchema?.properties
-        val oneOfArray = properties?.get("oneOf")?.jsonArray
-        assert(oneOfArray != null && oneOfArray.size == 2)
+        assert(outputSchema?.type == "object")
 
-        val firstOption = oneOfArray!![0].jsonObject
-        assert(firstOption["type"]?.jsonPrimitive?.content == "object")
-        val props = firstOption["properties"]!!.jsonObject
+        val properties = outputSchema?.properties!!
+        assert(!properties.containsKey("oneOf"))
 
-        assert(props.containsKey("results"))
-        val resultsProperty = props["results"]!!
+        assert(properties.containsKey("results"))
+        val resultsProperty = properties["results"]!!
         assert(resultsProperty.jsonObject["type"]?.jsonPrimitive?.content == "array")
         val items = resultsProperty.jsonObject["items"]!!.jsonObject
         assert(items["type"]?.jsonPrimitive?.content == "object")
@@ -94,19 +91,7 @@ class SearchToolTest {
             assert(required.contains(property))
         }
 
-        val firstOptionRequired = firstOption["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(firstOptionRequired.contains("results"))
-
-        val secondOption = oneOfArray[1].jsonObject
-        assert(secondOption["type"]?.jsonPrimitive?.content == "object")
-        val secondOptionProps = secondOption["properties"]!!.jsonObject
-
-        assert(secondOptionProps.containsKey("error"))
-        val errorProperty = secondOptionProps["error"]!!
-        assert(errorProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
-        assert(errorProperty.jsonObject["description"]?.jsonPrimitive?.content == "Error message in case of failures while searching TestWiki")
-
-        val secondOptionRequired = secondOption["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(secondOptionRequired.contains("error"))
+        val outputRequired = outputSchema.required!!
+        assert(outputRequired.contains("results"))
     }
 }
