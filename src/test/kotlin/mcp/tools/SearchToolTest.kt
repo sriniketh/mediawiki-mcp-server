@@ -28,22 +28,19 @@ class SearchToolTest {
         val tool = searchTool.createTool()
         val inputSchema = tool.inputSchema
         val properties = inputSchema.properties!!
-        assert(properties["type"]?.jsonPrimitive?.content == "object")
-        val props = properties["properties"]!!.jsonObject
 
-        assert(props.containsKey("query"))
-        val queryProperty = props["query"]!!
+        assert(properties.keys == setOf("query", "limit"))
+
+        val queryProperty = properties["query"]!!
         assert(queryProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
         assert(queryProperty.jsonObject["description"]?.jsonPrimitive?.content == "Search query for the TestWiki")
 
-        assert(props.containsKey("limit"))
-        val limitProperty = props["limit"]!!
+        val limitProperty = properties["limit"]!!
         assert(limitProperty.jsonObject["type"]?.jsonPrimitive?.content == "integer")
         assert(limitProperty.jsonObject["description"]?.jsonPrimitive?.content == "Maximum number of results to return (default: 5)")
         assert(limitProperty.jsonObject["default"]?.jsonPrimitive?.int == 5)
 
-        val required = properties["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        assert(required.contains("query"))
+        assert(inputSchema.required == listOf("query"))
     }
 
     @Test
