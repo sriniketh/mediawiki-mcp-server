@@ -91,6 +91,7 @@ class MediaWikiMCPServerTest {
             assertEquals("Another snippet", secondResult["snippet"]!!.jsonPrimitive.content)
             assertEquals("test query", responseJson["query"]!!.jsonPrimitive.content)
             assertEquals(2, responseJson["totalResults"]!!.jsonPrimitive.int)
+            assertTrue(result.isError != true)
         }
 
     @Test
@@ -117,6 +118,7 @@ class MediaWikiMCPServerTest {
             val content = result.content[0] as TextContent
             val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertEquals(result.structuredContent, responseJson)
+            assertTrue(result.isError != true)
         }
 
     @Test
@@ -147,6 +149,7 @@ class MediaWikiMCPServerTest {
             val errorMessage = responseJson["error"]!!.jsonPrimitive.content
             assertTrue(errorMessage.contains("Error occurred while searching the wiki"))
             assertTrue(errorMessage.contains("Search failed"))
+            assertEquals(true, result.isError)
         }
 
     @Test
@@ -181,6 +184,7 @@ class MediaWikiMCPServerTest {
             assertEquals("This is the content of the test page", responseJson["content"]!!.jsonPrimitive.content)
             assertNotNull(responseJson["url"]!!.jsonPrimitive.content)
             assertEquals(8, responseJson["word_count"]!!.jsonPrimitive.int)
+            assertTrue(result.isError != true)
         }
 
     @Test
@@ -210,6 +214,7 @@ class MediaWikiMCPServerTest {
             val errorMessage = responseJson["error"]!!.jsonPrimitive.content
             assertTrue(errorMessage.contains("Error occurred while fetching page content"))
             assertTrue(errorMessage.contains("Page not found"))
+            assertEquals(true, result.isError)
         }
 
     private fun createClientServerWithLinkedTransport(

@@ -87,7 +87,8 @@ class MediaWikiMCPServer(
                     }
                     CallToolResult(
                         content = listOf(TextContent(Json.encodeToString(response))),
-                        structuredContent = response
+                        structuredContent = response,
+                        isError = true
                     )
                 }
             )
@@ -122,7 +123,8 @@ class MediaWikiMCPServer(
                     }
                     CallToolResult(
                         content = listOf(TextContent(Json.encodeToString(response))),
-                        structuredContent = response
+                        structuredContent = response,
+                        isError = true
                     )
                 }
             )
