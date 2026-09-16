@@ -1,6 +1,9 @@
 package mcp
 
 import com.sriniketh.mcp.MediaWikiMCPServer
+import com.sriniketh.mcp.tools.GetPageContentTool
+import com.sriniketh.mcp.tools.MediaWikiTool
+import com.sriniketh.mcp.tools.SearchTool
 import com.sriniketh.model.PageContent
 import com.sriniketh.model.WikiPage
 import fakes.FakeBuildConfigProvider
@@ -16,9 +19,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -46,6 +47,27 @@ class MediaWikiMCPServerTest {
         val toolNames = tools.tools.map { it.name }
         assertTrue(toolNames.contains("search_wiki"))
         assertTrue(toolNames.contains("get_page_content"))
+    }
+
+    @Test
+    fun `tools list round trip returns flat, non-nested input schemas for the real tools`() = runTest {
+        val (server, client, clientTransport) = createClientServerWithLinkedTransport(
+            fakeSearchTool = SearchTool(FakeEnvConfigProvider()),
+            fakeGetPageContentTool = GetPageContentTool(FakeEnvConfigProvider())
+        )
+        server.start()
+        client.connect(clientTransport)
+        val tools = client.listTools(request = ListToolsRequest())
+
+        val searchInputSchema = tools.tools.first { it.name == "search_wiki" }.inputSchema
+        val searchProperties = searchInputSchema.properties!!
+        assertEquals(setOf("query", "limit"), searchProperties.keys)
+        assertEquals(listOf("query"), searchInputSchema.required)
+
+        val getPageContentInputSchema = tools.tools.first { it.name == "get_page_content" }.inputSchema
+        val getPageContentProperties = getPageContentInputSchema.properties!!
+        assertEquals(setOf("page_title"), getPageContentProperties.keys)
+        assertEquals(listOf("page_title"), getPageContentInputSchema.required)
     }
 
     @Test
@@ -78,10 +100,12 @@ class MediaWikiMCPServerTest {
             assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
             val responseJson = Json.parseToJsonElement(content.text).jsonObject
-            assertTrue(responseJson.containsKey("search_results"))
+            assertTrue(responseJson.containsKey("results"))
 
-            val searchResults = Json.decodeFromJsonElement<JsonObject>(responseJson["search_results"]!!)
-            val resultsArray = searchResults["results"]!!.jsonArray
+            assertNotNull(result.structuredContent)
+            assertEquals(responseJson, result.structuredContent)
+
+            val resultsArray = responseJson["results"]!!.jsonArray
             assertEquals(2, resultsArray.size)
             val firstResult = resultsArray[0].jsonObject
             assertEquals("Test Page", firstResult["title"]!!.jsonPrimitive.content)
@@ -89,8 +113,73 @@ class MediaWikiMCPServerTest {
             val secondResult = resultsArray[1].jsonObject
             assertEquals("Another Page", secondResult["title"]!!.jsonPrimitive.content)
             assertEquals("Another snippet", secondResult["snippet"]!!.jsonPrimitive.content)
-            assertEquals("test query", searchResults["query"]!!.jsonPrimitive.content)
-            assertEquals(2, searchResults["totalResults"]!!.jsonPrimitive.int)
+            assertEquals("test query", responseJson["query"]!!.jsonPrimitive.content)
+            assertEquals(2, responseJson["totalResults"]!!.jsonPrimitive.int)
+            assertTrue(result.isError != true)
+        }
+
+    @Test
+    fun `server responds with structuredContent satisfying declared outputSchema when search result only has title set`() =
+        runTest {
+            val fakeMediaWikiClient = FakeMediaWikiClient()
+            fakeMediaWikiClient.setSearchResults(Result.success(listOf(WikiPage(title = "Minimal Page"))))
+            val (server, client, clientTransport) = createClientServerWithLinkedTransport(
+                fakeMediaWikiClient = fakeMediaWikiClient,
+                fakeSearchTool = SearchTool(FakeEnvConfigProvider())
+            )
+
+            server.start()
+            client.connect(clientTransport)
+            val tools = client.listTools(request = ListToolsRequest())
+            val outputSchema = tools.tools.first { it.name == "search_wiki" }.outputSchema!!
+            val itemRequired = outputSchema.properties!!["results"]!!
+                .jsonObject["items"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+            val topLevelRequired = outputSchema.required!!
+
+            val result = client.callTool(
+                "search_wiki",
+                buildJsonObject {
+                    put("query", "minimal query")
+                    put("limit", 10)
+                }
+            )
+
+            assertNotNull(result.structuredContent)
+            for (key in topLevelRequired) {
+                assertTrue(result.structuredContent!!.containsKey(key))
+            }
+            val firstResult = result.structuredContent!!["results"]!!.jsonArray[0].jsonObject
+            for (key in itemRequired) {
+                assertTrue(firstResult.containsKey(key))
+            }
+            assertEquals(setOf("title"), firstResult.keys)
+        }
+
+    @Test
+    fun `server responds with structuredContent containing empty results when search returns no matches`() =
+        runTest {
+            val fakeMediaWikiClient = FakeMediaWikiClient()
+            fakeMediaWikiClient.setSearchResults(Result.success(emptyList()))
+            val (server, client, clientTransport) = createClientServerWithLinkedTransport(fakeMediaWikiClient)
+
+            server.start()
+            client.connect(clientTransport)
+            val result = client.callTool(
+                "search_wiki",
+                buildJsonObject {
+                    put("query", "no matches query")
+                    put("limit", 10)
+                }
+            )
+
+            assertNotNull(result.structuredContent)
+            val resultsArray = result.structuredContent!!["results"]!!.jsonArray
+            assertEquals(0, resultsArray.size)
+
+            val content = result.content[0] as TextContent
+            val responseJson = Json.parseToJsonElement(content.text).jsonObject
+            assertEquals(result.structuredContent, responseJson)
+            assertTrue(result.isError != true)
         }
 
     @Test
@@ -146,13 +235,16 @@ class MediaWikiMCPServerTest {
             assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
             val responseJson = Json.parseToJsonElement(content.text).jsonObject
-            assertTrue(responseJson.containsKey("page_content"))
+            assertTrue(responseJson.containsKey("title"))
 
-            val pageContent = Json.decodeFromJsonElement<JsonObject>(responseJson["page_content"]!!)
-            assertEquals("Test Page", pageContent["title"]!!.jsonPrimitive.content)
-            assertEquals("This is the content of the test page", pageContent["content"]!!.jsonPrimitive.content)
-            assertNotNull(pageContent["url"]!!.jsonPrimitive.content)
-            assertEquals(8, pageContent["word_count"]!!.jsonPrimitive.int)
+            assertNotNull(result.structuredContent)
+            assertEquals(responseJson, result.structuredContent)
+
+            assertEquals("Test Page", responseJson["title"]!!.jsonPrimitive.content)
+            assertEquals("This is the content of the test page", responseJson["content"]!!.jsonPrimitive.content)
+            assertNotNull(responseJson["url"]!!.jsonPrimitive.content)
+            assertEquals(8, responseJson["word_count"]!!.jsonPrimitive.int)
+            assertTrue(result.isError != true)
         }
 
     @Test
@@ -223,8 +315,8 @@ class MediaWikiMCPServerTest {
 
     private fun createClientServerWithLinkedTransport(
         fakeMediaWikiClient: FakeMediaWikiClient = FakeMediaWikiClient(),
-        fakeSearchTool: FakeMediaWikiTool = FakeMediaWikiTool("search_wiki"),
-        fakeGetPageContentTool: FakeMediaWikiTool = FakeMediaWikiTool("get_page_content"),
+        fakeSearchTool: MediaWikiTool = FakeMediaWikiTool("search_wiki"),
+        fakeGetPageContentTool: MediaWikiTool = FakeMediaWikiTool("get_page_content"),
         envConfigProvider: FakeEnvConfigProvider = FakeEnvConfigProvider()
     ): Triple<MediaWikiMCPServer, Client, FakeTransport> {
         val (serverTransport, clientTransport) = FakeTransport.createLinkedPair()
