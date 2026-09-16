@@ -18,6 +18,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.ListToolsRequest
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.client.ClientOptions
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
@@ -312,6 +313,65 @@ class MediaWikiMCPServerTest {
             assertTrue(firstServerInfo.title != secondServerInfo.title)
             assertEquals("0.1.0-test", firstServerInfo.version)
         }
+
+    @Test
+    fun `awaitShutdown returns once the transport closes`() = runTest {
+        val (server, serverTransport, _) = createServerWithLinkedTransport()
+        server.start()
+
+        serverTransport.close()
+
+        withTimeout(5_000) {
+            server.awaitShutdown()
+        }
+    }
+
+    @Test
+    fun `explicit session close produces the same shutdown path as a transport close`() = runTest {
+        val (server, _, _) = createServerWithLinkedTransport()
+        val session = server.start()
+
+        session.close()
+
+        withTimeout(5_000) {
+            server.awaitShutdown()
+        }
+    }
+
+    @Test
+    fun `session close hook fires exactly once even when closed more than once`() = runTest {
+        val (server, _, _) = createServerWithLinkedTransport()
+        val session = server.start()
+
+        var closeCount = 0
+        session.onClose { closeCount++ }
+
+        withTimeout(5_000) {
+            session.close()
+            session.close()
+            server.awaitShutdown()
+        }
+
+        assertEquals(1, closeCount)
+    }
+
+    private fun createServerWithLinkedTransport(
+        fakeMediaWikiClient: FakeMediaWikiClient = FakeMediaWikiClient(),
+        fakeSearchTool: MediaWikiTool = FakeMediaWikiTool("search_wiki"),
+        fakeGetPageContentTool: MediaWikiTool = FakeMediaWikiTool("get_page_content"),
+        envConfigProvider: FakeEnvConfigProvider = FakeEnvConfigProvider()
+    ): Triple<MediaWikiMCPServer, FakeTransport, FakeTransport> {
+        val (serverTransport, clientTransport) = FakeTransport.createLinkedPair()
+        val server = MediaWikiMCPServer(
+            wikiClient = fakeMediaWikiClient,
+            transport = serverTransport,
+            searchTool = fakeSearchTool,
+            getPageContentTool = fakeGetPageContentTool,
+            envConfigProvider = envConfigProvider,
+            buildConfigProvider = FakeBuildConfigProvider()
+        )
+        return Triple(server, serverTransport, clientTransport)
+    }
 
     private fun createClientServerWithLinkedTransport(
         fakeMediaWikiClient: FakeMediaWikiClient = FakeMediaWikiClient(),
