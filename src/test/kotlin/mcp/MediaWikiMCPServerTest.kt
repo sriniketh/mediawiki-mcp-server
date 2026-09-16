@@ -119,6 +119,43 @@ class MediaWikiMCPServerTest {
         }
 
     @Test
+    fun `server responds with structuredContent satisfying declared outputSchema when search result only has title set`() =
+        runTest {
+            val fakeMediaWikiClient = FakeMediaWikiClient()
+            fakeMediaWikiClient.setSearchResults(Result.success(listOf(WikiPage(title = "Minimal Page"))))
+            val (server, client, clientTransport) = createClientServerWithLinkedTransport(
+                fakeMediaWikiClient = fakeMediaWikiClient,
+                fakeSearchTool = SearchTool(FakeEnvConfigProvider())
+            )
+
+            server.start()
+            client.connect(clientTransport)
+            val tools = client.listTools(request = ListToolsRequest())
+            val outputSchema = tools.tools.first { it.name == "search_wiki" }.outputSchema!!
+            val itemRequired = outputSchema.properties!!["results"]!!
+                .jsonObject["items"]!!.jsonObject["required"]!!.jsonArray.map { it.jsonPrimitive.content }
+            val topLevelRequired = outputSchema.required!!
+
+            val result = client.callTool(
+                "search_wiki",
+                buildJsonObject {
+                    put("query", "minimal query")
+                    put("limit", 10)
+                }
+            )
+
+            assertNotNull(result.structuredContent)
+            for (key in topLevelRequired) {
+                assertTrue(result.structuredContent!!.containsKey(key))
+            }
+            val firstResult = result.structuredContent!!["results"]!!.jsonArray[0].jsonObject
+            for (key in itemRequired) {
+                assertTrue(firstResult.containsKey(key))
+            }
+            assertEquals(setOf("title"), firstResult.keys)
+        }
+
+    @Test
     fun `server responds with structuredContent containing empty results when search returns no matches`() =
         runTest {
             val fakeMediaWikiClient = FakeMediaWikiClient()

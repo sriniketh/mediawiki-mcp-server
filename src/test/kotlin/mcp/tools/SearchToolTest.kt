@@ -84,11 +84,19 @@ class SearchToolTest {
         assert(wordCountProperty.jsonObject["description"]?.jsonPrimitive?.content == "Number of words in the page")
 
         val required = items["required"]!!.jsonArray.map { it.jsonPrimitive.content }
-        for (property in expectedItemProperties) {
-            assert(required.contains(property))
-        }
+        assert(required == listOf("title"))
+
+        assert(properties.containsKey("totalResults"))
+        val totalResultsProperty = properties["totalResults"]!!
+        assert(totalResultsProperty.jsonObject["type"]?.jsonPrimitive?.content == "integer")
+
+        assert(properties.containsKey("query"))
+        val queryProperty = properties["query"]!!
+        assert(queryProperty.jsonObject["type"]?.jsonPrimitive?.content == "string")
+
+        assert(properties.keys == setOf("results", "totalResults", "query"))
 
         val outputRequired = outputSchema.required!!
-        assert(outputRequired.contains("results"))
+        assert(outputRequired.toSet() == setOf("results", "totalResults", "query"))
     }
 }
