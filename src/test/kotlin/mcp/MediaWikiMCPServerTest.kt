@@ -110,8 +110,11 @@ class MediaWikiMCPServerTest {
                 }
             )
 
+            assertEquals(true, result.isError)
+            assertEquals(null, result.structuredContent)
             assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
+            assertTrue(content.text.isNotEmpty())
             val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("error"))
 
@@ -168,8 +171,11 @@ class MediaWikiMCPServerTest {
                 }
             )
 
+            assertEquals(true, result.isError)
+            assertEquals(null, result.structuredContent)
             assertEquals(1, result.content.size)
             val content = result.content[0] as TextContent
+            assertTrue(content.text.isNotEmpty())
             val responseJson = Json.parseToJsonElement(content.text).jsonObject
             assertTrue(responseJson.containsKey("error"))
 
@@ -178,10 +184,48 @@ class MediaWikiMCPServerTest {
             assertTrue(errorMessage.contains("Page not found"))
         }
 
+    @Test
+    fun `initialize response advertises tools capability without listChanged`() = runTest {
+        val (server, client, clientTransport) = createClientServerWithLinkedTransport()
+
+        server.start()
+        client.connect(clientTransport)
+
+        val toolsCapability = client.serverCapabilities?.tools
+        assertNotNull(toolsCapability)
+        assertTrue(toolsCapability.listChanged != true)
+    }
+
+    @Test
+    fun `Implementation name is stable across different wiki configurations while title reflects the wiki`() =
+        runTest {
+            val (firstServer, firstClient, firstClientTransport) = createClientServerWithLinkedTransport(
+                envConfigProvider = FakeEnvConfigProvider("Wiki One")
+            )
+            val (secondServer, secondClient, secondClientTransport) = createClientServerWithLinkedTransport(
+                envConfigProvider = FakeEnvConfigProvider("Wiki Two")
+            )
+
+            firstServer.start()
+            firstClient.connect(firstClientTransport)
+            secondServer.start()
+            secondClient.connect(secondClientTransport)
+
+            val firstServerInfo = firstClient.serverVersion
+            val secondServerInfo = secondClient.serverVersion
+            assertNotNull(firstServerInfo)
+            assertNotNull(secondServerInfo)
+
+            assertEquals(firstServerInfo.name, secondServerInfo.name)
+            assertTrue(firstServerInfo.title != secondServerInfo.title)
+            assertEquals("0.1.0-test", firstServerInfo.version)
+        }
+
     private fun createClientServerWithLinkedTransport(
         fakeMediaWikiClient: FakeMediaWikiClient = FakeMediaWikiClient(),
         fakeSearchTool: FakeMediaWikiTool = FakeMediaWikiTool("search_wiki"),
-        fakeGetPageContentTool: FakeMediaWikiTool = FakeMediaWikiTool("get_page_content")
+        fakeGetPageContentTool: FakeMediaWikiTool = FakeMediaWikiTool("get_page_content"),
+        envConfigProvider: FakeEnvConfigProvider = FakeEnvConfigProvider()
     ): Triple<MediaWikiMCPServer, Client, FakeTransport> {
         val (serverTransport, clientTransport) = FakeTransport.createLinkedPair()
         val server = MediaWikiMCPServer(
@@ -189,7 +233,7 @@ class MediaWikiMCPServerTest {
             transport = serverTransport,
             searchTool = fakeSearchTool,
             getPageContentTool = fakeGetPageContentTool,
-            envConfigProvider = FakeEnvConfigProvider(),
+            envConfigProvider = envConfigProvider,
             buildConfigProvider = FakeBuildConfigProvider()
         )
         val client = Client(

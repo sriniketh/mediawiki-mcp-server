@@ -48,12 +48,13 @@ class MediaWikiMCPServer(
 
     private val server = Server(
         Implementation(
-            name = "${envConfigProvider.wikiName()} MCP Server",
+            name = "mediawiki-mcp-server",
+            title = "${envConfigProvider.wikiName()} MCP Server",
             version = buildConfigProvider.appVersion()
         ),
         ServerOptions(
             capabilities = ServerCapabilities(
-                tools = ServerCapabilities.Tools(listChanged = true)
+                tools = ServerCapabilities.Tools()
             )
         )
     )
@@ -83,7 +84,7 @@ class MediaWikiMCPServer(
                     val response = buildJsonObject {
                         put("error", "Error occurred while searching the wiki: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
                 }
             )
         }
@@ -114,7 +115,7 @@ class MediaWikiMCPServer(
                     val response = buildJsonObject {
                         put("error", "Error occurred while fetching page content: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
                 }
             )
         }
