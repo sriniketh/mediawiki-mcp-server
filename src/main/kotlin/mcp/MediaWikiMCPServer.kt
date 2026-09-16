@@ -31,6 +31,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 
 class MediaWikiMCPServer(
@@ -68,22 +69,27 @@ class MediaWikiMCPServer(
             wikiClient.handleSearch(input.query, input.limit).fold(
                 onSuccess = { results ->
                     logger.info { "Successfully processed search request, returning ${results.size} results" }
-                    val response = buildJsonObject {
-                        val result = SearchWikiOutput(
-                            results = results,
-                            totalResults = results.size,
-                            query = input.query
-                        )
-                        put("search_results", Json.encodeToJsonElement(result))
-                    }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    val result = SearchWikiOutput(
+                        results = results,
+                        totalResults = results.size,
+                        query = input.query
+                    )
+                    val response = Json.encodeToJsonElement(result).jsonObject
+                    CallToolResult(
+                        content = listOf(TextContent(Json.encodeToString(response))),
+                        structuredContent = response
+                    )
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to process search request for query '${input.query}': ${error.message}" }
                     val response = buildJsonObject {
                         put("error", "Error occurred while searching the wiki: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
+                    CallToolResult(
+                        content = listOf(TextContent(Json.encodeToString(response))),
+                        structuredContent = response,
+                        isError = true
+                    )
                 }
             )
         }
@@ -104,17 +110,22 @@ class MediaWikiMCPServer(
                         url = "${apiUrl.protocol}://${apiUrl.host}/${pageContent.title.replace(" ", "_")}",
                         wordCount = cleanContent.split("\\s+".toRegex()).size
                     )
-                    val response = buildJsonObject {
-                        put("page_content", Json.encodeToJsonElement(result))
-                    }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))))
+                    val response = Json.encodeToJsonElement(result).jsonObject
+                    CallToolResult(
+                        content = listOf(TextContent(Json.encodeToString(response))),
+                        structuredContent = response
+                    )
                 },
                 onFailure = { error ->
                     logger.error(error) { "Failed to fetch content for page title '${input.title}': ${error.message}" }
                     val response = buildJsonObject {
                         put("error", "Error occurred while fetching page content: ${error.message}")
                     }
-                    CallToolResult(content = listOf(TextContent(Json.encodeToString(response))), isError = true)
+                    CallToolResult(
+                        content = listOf(TextContent(Json.encodeToString(response))),
+                        structuredContent = response,
+                        isError = true
+                    )
                 }
             )
         }
