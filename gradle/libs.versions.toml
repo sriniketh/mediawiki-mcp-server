@@ -2,7 +2,7 @@
 buildconfig = "6.1.2"
 jsoup = "1.24.1"
 kotlin = "2.4.21"
-ktor = "3.6.1"
+ktor = "3.6.2"
 logback = "1.6.7"
 logging = "8.0.7"
 mcp = "0.16.0"
